@@ -1,6 +1,8 @@
 package scanner
 
 import (
+	"fmt"
+
 	"github.com/Minnozz/gompiler/token"
 )
 
@@ -10,6 +12,8 @@ type Scanner struct {
 
 	ch     byte
 	offset int
+
+	Errors []Error
 }
 
 func (s *Scanner) Init(fileInfo *token.FileInfo, src []byte) {
@@ -89,12 +93,19 @@ func (s *Scanner) Scan() (pos int, tok token.Token, lit string) {
 		case ']':
 			tok = token.SQUARE_BRACKET_CLOSE
 		default:
-			// TODO: error
+			s.error(s.offset, fmt.Sprintf("illegal character %+q", ch))
 			tok, lit = token.INVALID, string(ch)
 		}
 	}
 
 	return pos, tok, lit
+}
+
+func (s *Scanner) error(offset int, msg string) {
+	s.Errors = append(s.Errors, Error{
+		Pos: s.fileInfo.Position(offset),
+		Msg: msg,
+	})
 }
 
 func (s *Scanner) next() {
@@ -153,8 +164,9 @@ func (s *Scanner) scanComment() string {
 			s.next()
 			goto ok
 		}
-		// TODO: error comment not terminated
 	}
+	s.error(start, "block comment not terminated")
+
 ok:
 	return string(s.src[start:s.offset])
 }
@@ -164,7 +176,7 @@ func (s *Scanner) expect(ch byte, match token.Token) token.Token {
 		s.next()
 		return match
 	}
-	// TODO: Error
+	s.error(s.offset, fmt.Sprintf("expected %+q to scan %v, got %+q", ch, match, s.ch))
 	return token.INVALID
 }
 

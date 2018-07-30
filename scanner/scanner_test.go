@@ -53,4 +53,8 @@ func scanTestFile(t *testing.T, name string) {
 			t.Logf("%v @ %v", tok, info.Position(pos))
 		}
 	}
+
+	for _, err := range s.Errors {
+		t.Error(err)
+	}
 }
