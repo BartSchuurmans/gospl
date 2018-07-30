@@ -1,0 +1,8 @@
+Int
+main() {
+	if(True) {
+	}
+	else
+		return 1;
+	return 0;
+}

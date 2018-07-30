@@ -1,0 +1,17 @@
+Void
+putchar(Int x) {
+	return;
+}
+
+Int
+main() {
+	Int argc = 3;
+	Int i = 0;
+	[Int] rest = 1 : 2 : 3 : 4 : [];
+	while(argc > i) {
+		putchar(head(rest));
+		rest = tail(rest);
+		i = i+1;
+	}
+	return i;
+}

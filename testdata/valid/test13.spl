@@ -1,0 +1,10 @@
+(t, u)
+f(t a, u b) {
+	return (a, b);
+}
+
+Int
+main() {
+	(Int, Bool) x = f(5, True);
+	return fst(x);
+}

@@ -1,0 +1,19 @@
+[t]
+f(t a) {
+	return a : [];
+}
+
+Void
+ctassert([Bool] l) {
+	return;
+}
+
+Int
+main() {
+	[Bool] a = f(True);
+	ctassert(a);
+	if(head(a)) {
+		return 0;
+	}
+	return 1;
+}

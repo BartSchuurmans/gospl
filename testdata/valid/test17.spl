@@ -1,0 +1,13 @@
+([u], (u, [[t]]))
+f(t x, u y) {
+	[[t]] z = [];
+	[u] tmp = [];
+	tmp = y : tmp;
+	return (tmp, (y, z));
+}
+
+Int
+main() {
+	([Int], (Int, [[Bool]])) x = f(True, 5);
+	return 0;
+}

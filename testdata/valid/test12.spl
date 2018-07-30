@@ -1,0 +1,10 @@
+(t, [t])
+f(t x) {
+	return (x, x : []);
+}
+
+Int
+main() {
+	(Int, [Int]) b = f(5);
+	return head(snd(b));
+}
