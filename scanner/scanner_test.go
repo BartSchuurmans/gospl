@@ -37,8 +37,12 @@ func scanTestFile(t *testing.T, name string) {
 		Filename: name,
 	}
 
+	var errors ErrorList
+
 	s := &Scanner{}
-	s.Init(info, src)
+	s.Init(info, src, func(pos token.Position, msg string) {
+		errors.Add(pos, msg)
+	})
 
 	for {
 		pos, tok, lit := s.Scan()
@@ -54,7 +58,7 @@ func scanTestFile(t *testing.T, name string) {
 		}
 	}
 
-	for _, err := range s.Errors {
+	for _, err := range errors {
 		t.Error(err)
 	}
 }

@@ -12,3 +12,9 @@ type Error struct {
 func (e Error) Error() string {
 	return e.Pos.String() + ": " + e.Msg
 }
+
+type ErrorList []*Error
+
+func (el *ErrorList) Add(pos token.Position, msg string) {
+	*el = append(*el, &Error{pos, msg})
+}

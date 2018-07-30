@@ -6,21 +6,28 @@ import (
 	"github.com/Minnozz/gompiler/token"
 )
 
+type ErrorHandler func(pos token.Position, msg string)
+
 type Scanner struct {
-	fileInfo *token.FileInfo
-	src      []byte
+	fileInfo     *token.FileInfo
+	src          []byte
+	errorHandler ErrorHandler
 
 	ch     byte
 	offset int
 
-	Errors []Error
+	ErrorCount int
 }
 
-func (s *Scanner) Init(fileInfo *token.FileInfo, src []byte) {
+func (s *Scanner) Init(fileInfo *token.FileInfo, src []byte, errorHandler ErrorHandler) {
 	s.fileInfo = fileInfo
 	s.src = src
+	s.errorHandler = errorHandler
+
 	s.ch = 0
 	s.offset = -1 // Advance to 0 with first call to next()
+
+	s.ErrorCount = 0
 
 	// Read first byte
 	s.next()
@@ -102,10 +109,10 @@ func (s *Scanner) Scan() (pos int, tok token.Token, lit string) {
 }
 
 func (s *Scanner) error(offset int, msg string) {
-	s.Errors = append(s.Errors, Error{
-		Pos: s.fileInfo.Position(offset),
-		Msg: msg,
-	})
+	if s.errorHandler != nil {
+		s.errorHandler(s.fileInfo.Position(offset), msg)
+	}
+	s.ErrorCount++
 }
 
 func (s *Scanner) next() {
