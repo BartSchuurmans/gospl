@@ -15,8 +15,10 @@ func TestParserValid(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.Name(), func(t *testing.T) {
-			parseTestFile(t, test.Name())
+		name := test.Name()
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			parseTestFile(t, name)
 		})
 	}
 }

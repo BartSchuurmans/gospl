@@ -15,8 +15,9 @@ func TestScannerValid(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		t.Run(test.Name(), func(t *testing.T) {
-			scanTestFile(t, test.Name())
+		name := test.Name()
+		t.Run(name, func(t *testing.T) {
+			scanTestFile(t, name)
 		})
 	}
 }
