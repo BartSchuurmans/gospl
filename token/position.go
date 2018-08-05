@@ -4,6 +4,8 @@ import (
 	"fmt"
 )
 
+type Pos int
+
 type FileInfo struct {
 	Filename string
 
@@ -14,7 +16,9 @@ func (f *FileInfo) AddLine(offset int) {
 	f.newlines = append(f.newlines, offset)
 }
 
-func (f *FileInfo) Position(offset int) Position {
+func (f *FileInfo) Position(pos Pos) Position {
+	offset := int(pos)
+
 	lineIndex, lineOffset := 0, 0
 	for lineIndex < len(f.newlines) && offset > f.newlines[lineIndex] {
 		lineOffset = f.newlines[lineIndex] + 1
