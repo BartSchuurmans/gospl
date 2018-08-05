@@ -352,7 +352,7 @@ func (p *Parser) parseVariableDeclarationOrStatement(allowVariableDeclaration bo
 		}
 		name := p.parseIdentifier()
 		return p.continueVariableDeclaration(t, name), nil
-	case token.SQUARE_BRACKET_OPEN:
+	case token.ROUND_BRACKET_OPEN, token.SQUARE_BRACKET_OPEN:
 		if !allowVariableDeclaration {
 			p.errorExpected(p.pos, "statement")
 			p.next()
