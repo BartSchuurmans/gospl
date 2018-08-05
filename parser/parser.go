@@ -68,10 +68,8 @@ func (p *Parser) parseDeclaration() ast.Declaration {
 
 	switch p.tok {
 	case token.IS:
-		p.next()
 		return p.continueVariableDeclaration(t, name)
 	case token.ROUND_BRACKET_OPEN:
-		p.next()
 		return p.continueFunctionDeclaration(t, name)
 	default:
 		p.errorExpected(p.pos, "declaration")
@@ -80,11 +78,34 @@ func (p *Parser) parseDeclaration() ast.Declaration {
 	}
 }
 
-func (p *Parser) parseType() *ast.Type {
-	name := p.parseIdentifier()
-
-	return &ast.Type{
-		Name: name,
+func (p *Parser) parseType() ast.Type {
+	switch p.tok {
+	case token.IDENTIFIER:
+		name := p.parseIdentifier()
+		return &ast.NamedType{
+			Name: name,
+		}
+	case token.ROUND_BRACKET_OPEN:
+		p.next()
+		left := p.parseType()
+		p.expect(token.COMMA)
+		right := p.parseType()
+		p.expect(token.ROUND_BRACKET_CLOSE)
+		return &ast.TupleType{
+			Left:  left,
+			Right: right,
+		}
+	case token.SQUARE_BRACKET_OPEN:
+		p.next()
+		el := p.parseType()
+		p.expect(token.SQUARE_BRACKET_CLOSE)
+		return &ast.ListType{
+			ElementType: el,
+		}
+	default:
+		p.errorExpected(p.pos, "type")
+		p.next()
+		return &ast.BadType{}
 	}
 }
 
@@ -102,7 +123,8 @@ func (p *Parser) parseIdentifier() *ast.Identifier {
 	}
 }
 
-func (p *Parser) continueVariableDeclaration(t *ast.Type, name *ast.Identifier) *ast.VariableDeclaration {
+func (p *Parser) continueVariableDeclaration(t ast.Type, name *ast.Identifier) *ast.VariableDeclaration {
+	p.expect(token.IS)
 	initializer := p.parseExpression()
 	p.expect(token.SEMICOLON)
 
@@ -114,25 +136,70 @@ func (p *Parser) continueVariableDeclaration(t *ast.Type, name *ast.Identifier) 
 }
 
 func (p *Parser) parseExpression() ast.Expression {
+	var lhs ast.Expression
+
 	switch p.tok {
-	case token.INTEGER:
-		val := p.lit
-		p.next()
-		return &ast.LiteralExpression{
-			Value: val,
+	case token.INTEGER, token.EMPTY_LIST:
+		lhs = p.parseLiteralExpression()
+	case token.IDENTIFIER:
+		ident := p.parseIdentifier()
+		switch p.tok {
+		case token.ROUND_BRACKET_OPEN:
+			// Function call
+			lhs = p.continueFunctionCall(ident)
+		default:
+			// Identifier
+			lhs = ident
 		}
 	default:
 		p.errorExpected(p.pos, "expression")
 		p.next()
-		return &ast.BadExpression{}
+		lhs = &ast.BadExpression{}
+	}
+
+	switch p.tok {
+	case token.PLUS, token.MINUS, token.MULTIPLY, token.DIVIDE, token.MODULO,
+		token.EQUALS, token.LESS_THAN, token.GREATER_THAN, token.LESS_THAN_EQUALS, token.GREATER_THAN_EQUALS, token.NOT_EQUALS,
+		token.AND, token.OR, token.COLON:
+		op := p.tok
+		p.next()
+		rhs := p.parseExpression()
+		return &ast.BinaryExpression{
+			Left:     lhs,
+			Operator: op,
+			Right:    rhs,
+		}
+	default:
+		// Expression ends here
+		return lhs
 	}
 }
 
-func (p *Parser) continueFunctionDeclaration(returnType *ast.Type, name *ast.Identifier) *ast.FunctionDeclaration {
+func (p *Parser) parseLiteralExpression() *ast.LiteralExpression {
+	switch p.tok {
+	case token.INTEGER, token.EMPTY_LIST:
+		kind, value := p.tok, p.lit
+		p.next()
+		return &ast.LiteralExpression{
+			Kind:  kind,
+			Value: value,
+		}
+	default:
+		p.errorExpected(p.pos, "literal expression")
+		p.next()
+		return &ast.LiteralExpression{
+			Kind:  token.INVALID,
+			Value: "[BAD LITERAL EXPRESSION]",
+		}
+	}
+}
+
+func (p *Parser) continueFunctionDeclaration(returnType ast.Type, name *ast.Identifier) *ast.FunctionDeclaration {
+	p.expect(token.ROUND_BRACKET_OPEN)
 	params := p.parseFunctionParameters()
 	p.expect(token.ROUND_BRACKET_CLOSE)
 
-	body := p.parseBlockStatement()
+	varDecls, stmts := p.parseFunctionBody()
 
 	return &ast.FunctionDeclaration{
 		Name: name,
@@ -140,7 +207,8 @@ func (p *Parser) continueFunctionDeclaration(returnType *ast.Type, name *ast.Ide
 			Return:     returnType,
 			Parameters: params,
 		},
-		Body: body,
+		Variables:  varDecls,
+		Statements: stmts,
 	}
 }
 
@@ -180,19 +248,134 @@ func (p *Parser) parseFunctionParameter() *ast.FunctionParameter {
 	}
 }
 
-func (p *Parser) parseStatement() ast.Statement {
+func (p *Parser) parseFunctionBody() ([]*ast.VariableDeclaration, []ast.Statement) {
+	p.expect(token.CURLY_BRACKET_OPEN)
+
+	var varDecls []*ast.VariableDeclaration
+	var stmts []ast.Statement
+
+	allowVardecl := true
+	for p.tok != token.CURLY_BRACKET_CLOSE {
+		varDecl, stmt := p.parseVariableDeclarationOrStatement(allowVardecl)
+		if varDecl != nil {
+			varDecls = append(varDecls, varDecl)
+		} else {
+			stmts = append(stmts, stmt)
+			allowVardecl = false
+		}
+	}
+
+	p.expect(token.CURLY_BRACKET_CLOSE)
+
+	return varDecls, stmts
+}
+
+func (p *Parser) parseVariableDeclarationOrStatement(allowVariableDeclaration bool) (*ast.VariableDeclaration, ast.Statement) {
 	switch p.tok {
 	case token.RETURN:
-		p.next()
-		expr := p.parseExpression()
-		p.expect(token.SEMICOLON)
-		return &ast.ReturnStatement{
-			Value: expr,
+		return nil, p.parseReturnStatement()
+	case token.IF:
+		return nil, p.parseIfStatement()
+	case token.CURLY_BRACKET_OPEN:
+		return nil, p.parseBlockStatement()
+	case token.IDENTIFIER:
+		ident := p.parseIdentifier()
+
+		// Possible statements
+		switch p.tok {
+		case token.IS:
+			return nil, p.continueAssignmentStatement(ident)
+		case token.ROUND_BRACKET_OPEN:
+			return nil, p.continueFunctionCall(ident)
 		}
+
+		if !allowVariableDeclaration {
+			p.errorExpected(p.pos, "assignment or function call")
+			p.next()
+			return nil, &ast.BadStatement{}
+		}
+
+		// Variable declaration with type ident
+		t := &ast.NamedType{
+			Name: ident,
+		}
+		name := p.parseIdentifier()
+		return p.continueVariableDeclaration(t, name), nil
+	case token.SQUARE_BRACKET_OPEN:
+		if !allowVariableDeclaration {
+			p.errorExpected(p.pos, "statement")
+			p.next()
+			return nil, &ast.BadStatement{}
+		}
+		t := p.parseType()
+		name := p.parseIdentifier()
+		return p.continueVariableDeclaration(t, name), nil
+	case token.WHILE:
+		return nil, p.parseWhileStatement()
 	default:
-		p.errorExpected(p.pos, "statement")
+		if allowVariableDeclaration {
+			p.errorExpected(p.pos, "variable declaration or statement")
+		} else {
+			p.errorExpected(p.pos, "statement")
+		}
 		p.next()
-		return &ast.BadStatement{}
+		return nil, &ast.BadStatement{}
+	}
+}
+
+func (p *Parser) parseStatement() ast.Statement {
+	_, stmt := p.parseVariableDeclarationOrStatement(false)
+	return stmt
+}
+
+func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
+	p.expect(token.RETURN)
+
+	expr := p.parseExpression()
+
+	p.expect(token.SEMICOLON)
+
+	return &ast.ReturnStatement{
+		Value: expr,
+	}
+}
+
+func (p *Parser) parseIfStatement() *ast.IfStatement {
+	p.expect(token.IF)
+	p.expect(token.ROUND_BRACKET_OPEN)
+
+	cond := p.parseExpression()
+
+	p.expect(token.ROUND_BRACKET_CLOSE)
+
+	body := p.parseStatement()
+
+	var elseStmt ast.Statement
+	if p.tok == token.ELSE {
+		p.next()
+		elseStmt = p.parseStatement()
+	}
+
+	return &ast.IfStatement{
+		Condition: cond,
+		Body:      body,
+		Else:      elseStmt,
+	}
+}
+
+func (p *Parser) parseWhileStatement() *ast.WhileStatement {
+	p.expect(token.WHILE)
+	p.expect(token.ROUND_BRACKET_OPEN)
+
+	cond := p.parseExpression()
+
+	p.expect(token.ROUND_BRACKET_CLOSE)
+
+	body := p.parseStatement()
+
+	return &ast.WhileStatement{
+		Condition: cond,
+		Body:      body,
 	}
 }
 
@@ -208,5 +391,47 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 
 	return &ast.BlockStatement{
 		List: stmts,
+	}
+}
+
+func (p *Parser) continueAssignmentStatement(name *ast.Identifier) *ast.AssignmentStatement {
+	p.expect(token.IS)
+	value := p.parseExpression()
+	p.expect(token.SEMICOLON)
+
+	return &ast.AssignmentStatement{
+		Name:  name,
+		Value: value,
+	}
+}
+
+func (p *Parser) continueFunctionCall(name *ast.Identifier) *ast.FunctionCallStatement {
+	p.expect(token.ROUND_BRACKET_OPEN)
+
+	var args []ast.Expression
+
+	if p.tok != token.ROUND_BRACKET_CLOSE {
+	arguments:
+		for {
+			args = append(args, p.parseExpression())
+
+			switch p.tok {
+			case token.COMMA:
+				p.next()
+			case token.ROUND_BRACKET_CLOSE:
+				break arguments
+			default:
+				p.errorExpected(p.pos, token.COMMA.String()+" or "+token.ROUND_BRACKET_CLOSE.String())
+				p.next()
+				break arguments
+			}
+		}
+	}
+
+	p.expect(token.ROUND_BRACKET_CLOSE)
+
+	return &ast.FunctionCallStatement{
+		Name:      name,
+		Arguments: args,
 	}
 }
