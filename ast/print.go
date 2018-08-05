@@ -4,148 +4,117 @@ import (
 	"strings"
 )
 
-func (b *BadDeclaration) Print() string {
-	return "[BAD DECLARATION]"
-}
-
-func (b *BadExpression) Print() string {
-	return "[BAD EXPRESSION]"
-}
-
-func (b *BadStatement) Print() string {
-	return "[BAD STATEMENT]"
-}
-
-func (b *BadType) Print() string {
-	return "[BAD TYPE]"
-}
-
-func (f *File) Print() string {
-	// TODO: Comments are not printed
-	out := ""
-	for i, decl := range f.Declarations {
-		if i > 0 {
-			out += "\n\n"
+func PrintSource(node astNode) string {
+	switch n := node.(type) {
+	// File
+	case *File:
+		// TODO: Comments are not printed
+		out := ""
+		for i, decl := range n.Declarations {
+			if i > 0 {
+				out += "\n\n"
+			}
+			out += PrintSource(decl)
 		}
-		out += decl.Print()
-	}
-	return out
-}
+		return out
 
-func (v *VariableDeclaration) Print() string {
-	return v.Type.Print() + " " + v.Name.Print() + " = " + v.Initializer.Print() + ";"
-}
-
-func (f *FunctionDeclaration) Print() string {
-	out := f.Type.Return.Print() + " " + f.Name.Print() + "(" + f.Type.Parameters.Print() + ") {\n"
-	if len(f.Variables) > 0 {
-		for _, varDecl := range f.Variables {
-			out += indent(varDecl.Print()) + "\n"
+	// Declarations
+	case *VariableDeclaration:
+		return PrintSource(n.Type) + " " + PrintSource(n.Name) + " = " + PrintSource(n.Initializer) + ";"
+	case *FunctionDeclaration:
+		out := PrintSource(n.Type.Return) + " " + PrintSource(n.Name) + "(" + PrintSource(n.Type.Parameters) + ") {\n"
+		if len(n.Variables) > 0 {
+			for _, varDecl := range n.Variables {
+				out += indent(PrintSource(varDecl)) + "\n"
+			}
+			out += "\n"
 		}
-		out += "\n"
-	}
-	for _, stmt := range f.Statements {
-		out += indent(stmt.Print()) + "\n"
-	}
-	out += "}"
-	return out
-}
-
-func (f *FunctionParameters) Print() string {
-	out := ""
-	for i, param := range f.Parameters {
-		if i > 0 {
-			out += ", "
+		for _, stmt := range n.Statements {
+			out += indent(PrintSource(stmt)) + "\n"
 		}
-		out += param.Print()
-	}
-	return out
-}
-
-func (f *FunctionParameter) Print() string {
-	return f.Type.Print() + " " + f.Name.Print()
-}
-
-func (l *LiteralExpression) Print() string {
-	return l.Value
-}
-
-func (b *BinaryExpression) Print() string {
-	return b.Left.Print() + " " + b.Operator.Print() + " " + b.Right.Print()
-}
-
-func (f *FunctionCallExpression) Print() string {
-	out := f.Name.Print() + "("
-	for i, expr := range f.Arguments {
-		if i > 0 {
-			out += ", "
+		out += "}"
+		return out
+	case *FunctionParameters:
+		out := ""
+		for i, param := range n.Parameters {
+			if i > 0 {
+				out += ", "
+			}
+			out += PrintSource(param)
 		}
-		out += expr.Print()
+		return out
+	case *FunctionParameter:
+		return PrintSource(n.Type) + " " + PrintSource(n.Name)
+	case *BadDeclaration:
+		return "/* BAD DECLARATION */"
+
+	// Expressions
+	case *LiteralExpression:
+		return n.Value
+	case *BinaryExpression:
+		return PrintSource(n.Left) + " " + n.Operator.Print() + " " + PrintSource(n.Right)
+	case *FunctionCallExpression:
+		out := PrintSource(n.Name) + "("
+		for i, expr := range n.Arguments {
+			if i > 0 {
+				out += ", "
+			}
+			out += PrintSource(expr)
+		}
+		out += ")"
+		return out
+	case *ParenthesizedExpression:
+		return "(" + PrintSource(n.Expression) + ")"
+	case *TupleExpression:
+		return "(" + PrintSource(n.Left) + ", " + PrintSource(n.Right) + ")"
+	case *Identifier:
+		return n.Name
+	case *BadExpression:
+		return "/* BAD EXPRESSION */"
+
+	// Statements
+	case *BlockStatement:
+		out := "{\n"
+		for _, stmt := range n.List {
+			out += indent(PrintSource(stmt)) + "\n"
+		}
+		out += "}"
+		return out
+	case *ReturnStatement:
+		out := "return"
+		if n.Value != nil {
+			out += " " + PrintSource(n.Value)
+		}
+		out += ";"
+		return out
+	case *IfStatement:
+		out := "if(" + PrintSource(n.Condition) + ") " + PrintSource(n.Body)
+		if n.Else != nil {
+			out += " else " + PrintSource(n.Else)
+		}
+		return out
+	case *WhileStatement:
+		return "while(" + PrintSource(n.Condition) + ") " + PrintSource(n.Body)
+	case *AssignmentStatement:
+		return PrintSource(n.Name) + " = " + PrintSource(n.Value) + ";"
+	case *FunctionCallStatement:
+		return PrintSource(n.FunctionCall) + ";"
+	case *BadStatement:
+		return "/* BAD STATEMENT */"
+
+	// Types
+	case *NamedType:
+		return PrintSource(n.Name)
+	case *TupleType:
+		return "(" + PrintSource(n.Left) + ", " + PrintSource(n.Right) + ")"
+	case *ListType:
+		return "[" + PrintSource(n.ElementType) + "]"
+	case *BadType:
+		return "/* BAD TYPE */"
+
+	default:
+		return "/* UNKNOWN AST NODE */"
 	}
-	out += ")"
-	return out
-}
-
-func (p *ParenthesizedExpression) Print() string {
-	return "(" + p.Expression.Print() + ")"
-}
-
-func (t *TupleExpression) Print() string {
-	return "(" + t.Left.Print() + ", " + t.Right.Print() + ")"
-}
-
-func (i *Identifier) Print() string {
-	return i.Name
-}
-
-func (n *NamedType) Print() string {
-	return n.Name.Print()
-}
-
-func (t *TupleType) Print() string {
-	return "(" + t.Left.Print() + ", " + t.Right.Print() + ")"
-}
-
-func (l *ListType) Print() string {
-	return "[" + l.ElementType.Print() + "]"
-}
-
-func (b *BlockStatement) Print() string {
-	out := "{\n"
-	for _, stmt := range b.List {
-		out += indent(stmt.Print()) + "\n"
-	}
-	out += "}"
-	return out
-}
-
-func (r *ReturnStatement) Print() string {
-	out := "return"
-	if r.Value != nil {
-		out += " " + r.Value.Print()
-	}
-	out += ";"
-	return out
-}
-
-func (i *IfStatement) Print() string {
-	out := "if(" + i.Condition.Print() + ") " + i.Body.Print()
-	if i.Else != nil {
-		out += " else " + i.Else.Print()
-	}
-	return out
-}
-
-func (w *WhileStatement) Print() string {
-	return "while(" + w.Condition.Print() + ") " + w.Body.Print()
-}
-
-func (a *AssignmentStatement) Print() string {
-	return a.Name.Print() + " = " + a.Value.Print() + ";"
-}
-
-func (f *FunctionCallStatement) Print() string {
-	return f.FunctionCall.Print() + ";"
 }
 
 func indent(s string) string {

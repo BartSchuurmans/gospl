@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Minnozz/gompiler/ast"
 	"github.com/Minnozz/gompiler/token"
 )
 
@@ -48,5 +49,5 @@ func parseTestFile(t *testing.T, name string) {
 		t.Error(err)
 	}
 
-	t.Logf("Reconstructed source from AST:\n%s\n", f.Print())
+	t.Logf("Reconstructed source from AST:\n%s\n", ast.PrintSource(f))
 }
