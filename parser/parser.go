@@ -331,7 +331,12 @@ func (p *Parser) parseStatement() ast.Statement {
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	p.expect(token.RETURN)
 
-	expr := p.parseExpression()
+	var expr ast.Expression
+	if p.tok == token.SEMICOLON {
+		// Empty return statement (not allowed according to grammar)
+	} else {
+		expr = p.parseExpression()
+	}
 
 	p.expect(token.SEMICOLON)
 

@@ -99,7 +99,12 @@ func (b *BlockStatement) Print() string {
 }
 
 func (r *ReturnStatement) Print() string {
-	return "return " + r.Value.Print() + ";"
+	out := "return"
+	if r.Value != nil {
+		out += " " + r.Value.Print()
+	}
+	out += ";"
+	return out
 }
 
 func (i *IfStatement) Print() string {
