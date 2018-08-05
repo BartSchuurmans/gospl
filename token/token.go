@@ -43,6 +43,8 @@ const (
 	SQUARE_BRACKET_OPEN  // [
 	SQUARE_BRACKET_CLOSE // ]
 
+	EMPTY_LIST // []
+
 	// Keywords
 	IF     // if
 	ELSE   // else

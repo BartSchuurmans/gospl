@@ -96,7 +96,10 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 		case '}':
 			tok = token.CURLY_BRACKET_CLOSE
 		case '[':
-			tok = token.SQUARE_BRACKET_OPEN
+			tok = s.try(']', token.EMPTY_LIST, token.SQUARE_BRACKET_OPEN)
+			if tok == token.EMPTY_LIST {
+				lit = "[]"
+			}
 		case ']':
 			tok = token.SQUARE_BRACKET_CLOSE
 		default:
