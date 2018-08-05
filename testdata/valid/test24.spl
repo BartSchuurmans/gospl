@@ -3,7 +3,7 @@ main() {
 	Int number = 0;
 	while(number <= 10) {
 		if(number >= 3 && number <= 7 && number % 2 == 0) {
-			print number;
+			print(number);
 		}
 	}
 	return 0;
