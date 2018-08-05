@@ -48,8 +48,6 @@ const (
 	ELSE   // else
 	WHILE  // while
 	RETURN // return
-	TRUE   // True
-	FALSE  // False
 )
 
 //go:generate stringer -type=Token
@@ -60,8 +58,6 @@ var keywords = map[string]Token{
 	"else":   ELSE,
 	"while":  WHILE,
 	"return": RETURN,
-	"True":   TRUE,
-	"False":  FALSE,
 }
 
 // LookupWord returns the Token and literal for a scanned word
