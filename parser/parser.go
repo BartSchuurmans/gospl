@@ -7,8 +7,10 @@ import (
 )
 
 type Parser struct {
-	fileInfo *token.FileInfo
 	Errors   scanner.ErrorList
+	Comments []*ast.Comment
+
+	fileInfo *token.FileInfo
 	scanner  scanner.Scanner
 
 	// Current scanner token
@@ -38,6 +40,25 @@ func (p *Parser) Parse() *ast.File {
 
 func (p *Parser) next() {
 	p.pos, p.tok, p.lit = p.scanner.Scan()
+
+	// Automatically parse comments
+	for p.tok == token.COMMENT {
+		p.Comments = append(p.Comments, p.parseComment())
+	}
+}
+
+func (p *Parser) parseComment() *ast.Comment {
+	var text string
+	if p.tok == token.COMMENT {
+		text = p.lit
+	} else {
+		p.errorExpected(p.pos, "comment")
+	}
+	p.next()
+
+	return &ast.Comment{
+		Text: text,
+	}
 }
 
 func (p *Parser) error(pos token.Pos, msg string) {

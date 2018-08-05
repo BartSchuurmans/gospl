@@ -21,6 +21,7 @@ func (b *BadType) Print() string {
 }
 
 func (f *File) Print() string {
+	// TODO: Comments are not printed
 	out := ""
 	for i, decl := range f.Declarations {
 		if i > 0 {
