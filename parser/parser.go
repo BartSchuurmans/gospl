@@ -217,7 +217,7 @@ func (p *Parser) parseFunctionParameters() *ast.FunctionParameters {
 
 	if p.tok != token.ROUND_BRACKET_CLOSE {
 	parameters:
-		for {
+		for p.tok != token.EOF {
 			params = append(params, p.parseFunctionParameter())
 
 			switch p.tok {
@@ -255,7 +255,7 @@ func (p *Parser) parseFunctionBody() ([]*ast.VariableDeclaration, []ast.Statemen
 	var stmts []ast.Statement
 
 	allowVardecl := true
-	for p.tok != token.CURLY_BRACKET_CLOSE {
+	for p.tok != token.CURLY_BRACKET_CLOSE && p.tok != token.EOF {
 		varDecl, stmt := p.parseVariableDeclarationOrStatement(allowVardecl)
 		if varDecl != nil {
 			varDecls = append(varDecls, varDecl)
@@ -383,7 +383,7 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	p.expect(token.CURLY_BRACKET_OPEN)
 
 	var stmts []ast.Statement
-	for p.tok != token.CURLY_BRACKET_CLOSE {
+	for p.tok != token.CURLY_BRACKET_CLOSE && p.tok != token.EOF {
 		stmts = append(stmts, p.parseStatement())
 	}
 
