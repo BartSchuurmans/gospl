@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"github.com/Minnozz/gompiler/token"
+	"github.com/Minnozz/gospl/token"
 )
 
 type Expression interface {

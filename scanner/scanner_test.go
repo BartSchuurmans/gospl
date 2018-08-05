@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Minnozz/gompiler/token"
+	"github.com/Minnozz/gospl/token"
 )
 
 func TestScannerValid(t *testing.T) {

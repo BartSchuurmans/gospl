@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/Minnozz/gompiler/ast"
-	"github.com/Minnozz/gompiler/token"
+	"github.com/Minnozz/gospl/ast"
+	"github.com/Minnozz/gospl/token"
 )
 
 func TestParserValid(t *testing.T) {

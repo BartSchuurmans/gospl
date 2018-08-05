@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"github.com/Minnozz/gompiler/ast"
-	"github.com/Minnozz/gompiler/scanner"
-	"github.com/Minnozz/gompiler/token"
+	"github.com/Minnozz/gospl/ast"
+	"github.com/Minnozz/gospl/scanner"
+	"github.com/Minnozz/gospl/token"
 )
 
 type Parser struct {

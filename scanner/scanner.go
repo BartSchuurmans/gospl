@@ -3,7 +3,7 @@ package scanner
 import (
 	"fmt"
 
-	"github.com/Minnozz/gompiler/token"
+	"github.com/Minnozz/gospl/token"
 )
 
 type ErrorHandler func(pos token.Position, msg string)
