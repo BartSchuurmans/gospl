@@ -71,3 +71,50 @@ func LookupWord(word string) (Token, string) {
 		return IDENTIFIER, word
 	}
 }
+
+var printStrings = map[Token]string{
+	PLUS:     "+",
+	MINUS:    "-",
+	MULTIPLY: "*",
+	DIVIDE:   "/",
+	MODULO:   "%",
+
+	AND: "&&",
+	OR:  "||",
+
+	EQUALS:       "==",
+	LESS_THAN:    "<",
+	GREATER_THAN: ">",
+	IS:           "=",
+	NOT:          "!",
+
+	NOT_EQUALS:          "!=",
+	LESS_THAN_EQUALS:    "<=",
+	GREATER_THAN_EQUALS: ">=",
+
+	COMMA:     ",",
+	SEMICOLON: ";",
+	COLON:     ":",
+
+	ROUND_BRACKET_OPEN:   "(",
+	ROUND_BRACKET_CLOSE:  ")",
+	CURLY_BRACKET_OPEN:   "{",
+	CURLY_BRACKET_CLOSE:  "}",
+	SQUARE_BRACKET_OPEN:  "[",
+	SQUARE_BRACKET_CLOSE: "]",
+
+	EMPTY_LIST: "[]",
+
+	IF:     "if",
+	ELSE:   "else",
+	WHILE:  "while",
+	RETURN: "return",
+}
+
+func (t Token) Print() string {
+	s, ok := printStrings[t]
+	if !ok {
+		panic("Token " + t.String() + " is not printable")
+	}
+	return s
+}
