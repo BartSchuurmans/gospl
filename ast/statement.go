@@ -36,6 +36,5 @@ type AssignmentStatement struct {
 }
 
 type FunctionCallStatement struct {
-	Name      *Identifier
-	Arguments []Expression
+	FunctionCall *FunctionCallExpression
 }

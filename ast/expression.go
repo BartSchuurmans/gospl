@@ -25,3 +25,8 @@ type BinaryExpression struct {
 	Operator token.Token
 	Right    Expression
 }
+
+type FunctionCallExpression struct {
+	Name      *Identifier
+	Arguments []Expression
+}

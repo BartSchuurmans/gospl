@@ -146,7 +146,7 @@ func (p *Parser) parseExpression() ast.Expression {
 		switch p.tok {
 		case token.ROUND_BRACKET_OPEN:
 			// Function call
-			lhs = p.continueFunctionCall(ident)
+			lhs = p.continueFunctionCallExpression(ident)
 		default:
 			// Identifier
 			lhs = ident
@@ -191,6 +191,37 @@ func (p *Parser) parseLiteralExpression() *ast.LiteralExpression {
 			Kind:  token.INVALID,
 			Value: "[BAD LITERAL EXPRESSION]",
 		}
+	}
+}
+
+func (p *Parser) continueFunctionCallExpression(name *ast.Identifier) *ast.FunctionCallExpression {
+	p.expect(token.ROUND_BRACKET_OPEN)
+
+	var args []ast.Expression
+
+	if p.tok != token.ROUND_BRACKET_CLOSE {
+	arguments:
+		for {
+			args = append(args, p.parseExpression())
+
+			switch p.tok {
+			case token.COMMA:
+				p.next()
+			case token.ROUND_BRACKET_CLOSE:
+				break arguments
+			default:
+				p.errorExpected(p.pos, token.COMMA.String()+" or "+token.ROUND_BRACKET_CLOSE.String())
+				p.next()
+				break arguments
+			}
+		}
+	}
+
+	p.expect(token.ROUND_BRACKET_CLOSE)
+
+	return &ast.FunctionCallExpression{
+		Name:      name,
+		Arguments: args,
 	}
 }
 
@@ -286,7 +317,7 @@ func (p *Parser) parseVariableDeclarationOrStatement(allowVariableDeclaration bo
 		case token.IS:
 			return nil, p.continueAssignmentStatement(ident)
 		case token.ROUND_BRACKET_OPEN:
-			return nil, p.continueFunctionCall(ident)
+			return nil, p.continueFunctionCallStatement(ident)
 		}
 
 		if !allowVariableDeclaration {
@@ -410,33 +441,12 @@ func (p *Parser) continueAssignmentStatement(name *ast.Identifier) *ast.Assignme
 	}
 }
 
-func (p *Parser) continueFunctionCall(name *ast.Identifier) *ast.FunctionCallStatement {
-	p.expect(token.ROUND_BRACKET_OPEN)
+func (p *Parser) continueFunctionCallStatement(name *ast.Identifier) *ast.FunctionCallStatement {
+	call := p.continueFunctionCallExpression(name)
 
-	var args []ast.Expression
-
-	if p.tok != token.ROUND_BRACKET_CLOSE {
-	arguments:
-		for {
-			args = append(args, p.parseExpression())
-
-			switch p.tok {
-			case token.COMMA:
-				p.next()
-			case token.ROUND_BRACKET_CLOSE:
-				break arguments
-			default:
-				p.errorExpected(p.pos, token.COMMA.String()+" or "+token.ROUND_BRACKET_CLOSE.String())
-				p.next()
-				break arguments
-			}
-		}
-	}
-
-	p.expect(token.ROUND_BRACKET_CLOSE)
+	p.expect(token.SEMICOLON)
 
 	return &ast.FunctionCallStatement{
-		Name:      name,
-		Arguments: args,
+		FunctionCall: call,
 	}
 }

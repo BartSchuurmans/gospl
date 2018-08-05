@@ -73,6 +73,18 @@ func (b *BinaryExpression) Print() string {
 	return b.Left.Print() + " " + b.Operator.Print() + " " + b.Right.Print()
 }
 
+func (f *FunctionCallExpression) Print() string {
+	out := f.Name.Print() + "("
+	for i, expr := range f.Arguments {
+		if i > 0 {
+			out += ", "
+		}
+		out += expr.Print()
+	}
+	out += ")"
+	return out
+}
+
 func (i *Identifier) Print() string {
 	return i.Name
 }
@@ -124,15 +136,7 @@ func (a *AssignmentStatement) Print() string {
 }
 
 func (f *FunctionCallStatement) Print() string {
-	out := f.Name.Print() + "("
-	for i, expr := range f.Arguments {
-		if i > 0 {
-			out += ", "
-		}
-		out += expr.Print()
-	}
-	out += ")"
-	return out
+	return f.FunctionCall.Print() + ";"
 }
 
 func indent(s string) string {
