@@ -5,7 +5,7 @@ Void
 check(Int ret) {
 	/* This is a multi-line comment on a single line */
 	if(ret != 0) {
-		print ret;
+		print(ret);
 	}
 }
 
