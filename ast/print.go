@@ -85,6 +85,14 @@ func (f *FunctionCallExpression) Print() string {
 	return out
 }
 
+func (p *ParenthesizedExpression) Print() string {
+	return "(" + p.Expression.Print() + ")"
+}
+
+func (t *TupleExpression) Print() string {
+	return "(" + t.Left.Print() + ", " + t.Right.Print() + ")"
+}
+
 func (i *Identifier) Print() string {
 	return i.Name
 }

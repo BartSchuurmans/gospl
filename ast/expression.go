@@ -30,3 +30,12 @@ type FunctionCallExpression struct {
 	Name      *Identifier
 	Arguments []Expression
 }
+
+type ParenthesizedExpression struct {
+	Expression Expression
+}
+
+type TupleExpression struct {
+	Left  Expression
+	Right Expression
+}

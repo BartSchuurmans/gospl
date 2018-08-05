@@ -151,6 +151,26 @@ func (p *Parser) parseExpression() ast.Expression {
 			// Identifier
 			lhs = ident
 		}
+	case token.ROUND_BRACKET_OPEN:
+		p.next()
+		expr := p.parseExpression()
+
+		if p.tok == token.COMMA {
+			// Tuple expression
+			p.next()
+			second := p.parseExpression()
+			p.expect(token.ROUND_BRACKET_CLOSE)
+			lhs = &ast.TupleExpression{
+				Left:  expr,
+				Right: second,
+			}
+		} else {
+			// Parenthesized expression
+			p.expect(token.ROUND_BRACKET_CLOSE)
+			lhs = &ast.ParenthesizedExpression{
+				Expression: expr,
+			}
+		}
 	default:
 		p.errorExpected(p.pos, "expression")
 		p.next()
