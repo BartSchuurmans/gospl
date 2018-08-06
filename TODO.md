@@ -1,5 +1,9 @@
 # TODO
 
+## Grammar
+* Add VariableDeclarationStatement
+  This simplifies the function body to an ast.BlockStatement, and makes parsing variable declarations cleaner.
+
 ## Scanner
 * Define separate tokens for literals True/False?
 * Define separate tokens for types Int/Bool/Void?
