@@ -274,11 +274,9 @@ func (p *Parser) continueFunctionDeclaration(returnType ast.Type, name *ast.Iden
 	varDecls, stmts := p.parseFunctionBody()
 
 	return &ast.FunctionDeclaration{
-		Name: name,
-		Type: &ast.FunctionType{
-			Return:     returnType,
-			Parameters: params,
-		},
+		ReturnType: returnType,
+		Name:       name,
+		Parameters: params,
 		Variables:  varDecls,
 		Statements: stmts,
 	}

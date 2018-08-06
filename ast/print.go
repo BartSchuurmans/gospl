@@ -22,7 +22,7 @@ func PrintSource(node astNode) string {
 	case *VariableDeclaration:
 		return PrintSource(n.Type) + " " + PrintSource(n.Name) + " = " + PrintSource(n.Initializer) + ";"
 	case *FunctionDeclaration:
-		out := PrintSource(n.Type.Return) + " " + PrintSource(n.Name) + "(" + PrintSource(n.Type.Parameters) + ") {\n"
+		out := PrintSource(n.ReturnType) + " " + PrintSource(n.Name) + "(" + PrintSource(n.Parameters) + ") {\n"
 		if len(n.Variables) > 0 {
 			for _, varDecl := range n.Variables {
 				out += indent(PrintSource(varDecl)) + "\n"

@@ -14,15 +14,11 @@ type VariableDeclaration struct {
 }
 
 type FunctionDeclaration struct {
+	ReturnType Type
 	Name       *Identifier
-	Type       *FunctionType
+	Parameters *FunctionParameters
 	Variables  []*VariableDeclaration
 	Statements []Statement
-}
-
-type FunctionType struct {
-	Parameters *FunctionParameters
-	Return     Type
 }
 
 type FunctionParameters struct {
