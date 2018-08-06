@@ -7,10 +7,6 @@ type Statement interface {
 type BadStatement struct {
 }
 
-type VariableDeclarationStatement struct {
-	Declaration *VariableDeclaration
-}
-
 type BlockStatement struct {
 	List []Statement
 }
