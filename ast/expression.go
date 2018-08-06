@@ -5,20 +5,32 @@ import (
 )
 
 type Expression interface {
-	astNode
+	Node
 }
 
 type BadExpression struct {
+	From, To token.Pos
 }
+
+func (e *BadExpression) Pos() token.Pos { return e.From }
+func (e *BadExpression) End() token.Pos { return e.To }
 
 type Identifier struct {
-	Name string
+	NamePos token.Pos
+	Name    string
 }
 
+func (e *Identifier) Pos() token.Pos { return e.NamePos }
+func (e *Identifier) End() token.Pos { return token.Pos(int(e.NamePos) + len(e.Name)) }
+
 type LiteralExpression struct {
-	Kind  token.Token
-	Value string
+	ValuePos token.Pos
+	Kind     token.Token
+	Value    string
 }
+
+func (e *LiteralExpression) Pos() token.Pos { return e.ValuePos }
+func (e *LiteralExpression) End() token.Pos { return token.Pos(int(e.ValuePos) + len(e.Value)) }
 
 type BinaryExpression struct {
 	Left     Expression
@@ -26,16 +38,33 @@ type BinaryExpression struct {
 	Right    Expression
 }
 
+func (e *BinaryExpression) Pos() token.Pos { return e.Left.Pos() }
+func (e *BinaryExpression) End() token.Pos { return e.Right.End() }
+
 type FunctionCallExpression struct {
-	Name      *Identifier
-	Arguments []Expression
+	Name              *Identifier
+	Arguments         []Expression
+	RoundBracketClose token.Pos
 }
+
+func (e *FunctionCallExpression) Pos() token.Pos { return e.Name.Pos() }
+func (e *FunctionCallExpression) End() token.Pos { return e.RoundBracketClose + 1 }
 
 type ParenthesizedExpression struct {
-	Expression Expression
+	RoundBracketOpen  token.Pos
+	Expression        Expression
+	RoundBracketClose token.Pos
 }
 
+func (e *ParenthesizedExpression) Pos() token.Pos { return e.RoundBracketOpen }
+func (e *ParenthesizedExpression) End() token.Pos { return e.RoundBracketClose + 1 }
+
 type TupleExpression struct {
-	Left  Expression
-	Right Expression
+	RoundBracketOpen  token.Pos
+	Left              Expression
+	Right             Expression
+	RoundBracketClose token.Pos
 }
+
+func (e *TupleExpression) Pos() token.Pos { return e.RoundBracketOpen }
+func (e *TupleExpression) End() token.Pos { return e.RoundBracketClose + 1 }

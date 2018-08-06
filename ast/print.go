@@ -4,7 +4,7 @@ import (
 	"strings"
 )
 
-func PrintSource(node astNode) string {
+func PrintSource(node Node) string {
 	switch n := node.(type) {
 	// File
 	case *File:
