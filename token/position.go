@@ -6,6 +6,11 @@ import (
 
 type Pos int
 
+var NoPos Pos = 0
+
+// Start at 1 so the zero value NoPos is distinct from the first character.
+var posBase = 1
+
 type FileInfo struct {
 	Filename string
 
@@ -16,8 +21,12 @@ func (f *FileInfo) AddLine(offset int) {
 	f.newlines = append(f.newlines, offset)
 }
 
+func (f *FileInfo) Pos(offset int) Pos {
+	return Pos(offset + 1)
+}
+
 func (f *FileInfo) Position(pos Pos) Position {
-	offset := int(pos)
+	offset := int(pos) - posBase
 
 	lineIndex, lineOffset := 0, 0
 	for lineIndex < len(f.newlines) && offset > f.newlines[lineIndex] {

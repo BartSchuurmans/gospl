@@ -37,7 +37,7 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 	s.skipWhitespace()
 
 	// Record start of token
-	pos = token.Pos(s.offset)
+	pos = s.fileInfo.Pos(s.offset)
 
 	// Determine token by looking at the first character
 	switch ch := s.ch; {
@@ -113,7 +113,7 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 
 func (s *Scanner) error(offset int, msg string) {
 	if s.errorHandler != nil {
-		s.errorHandler(s.fileInfo.Position(token.Pos(offset)), msg)
+		s.errorHandler(s.fileInfo.Position(s.fileInfo.Pos(offset)), msg)
 	}
 	s.ErrorCount++
 }
