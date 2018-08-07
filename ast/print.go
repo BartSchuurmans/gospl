@@ -1,8 +1,47 @@
 package ast
 
 import (
+	"fmt"
 	"strings"
 )
+
+type printer struct {
+	lines []string
+	depth int
+}
+
+func (p *printer) Visit(n Node) {
+	var info string
+	switch nv := n.(type) {
+	case *Identifier:
+		info = nv.Name
+	case *LiteralExpression:
+		info = nv.Kind.String() + ": " + nv.Value
+	case *UnaryExpression:
+		info = nv.Operator.Print()
+	case *BinaryExpression:
+		info = nv.Operator.Print()
+	}
+
+	if info != "" {
+		info = ": " + info
+	}
+
+	line := fmt.Sprintf("%s%T%s", strings.Repeat("   ", p.depth), n, info)
+	p.lines = append(p.lines, line)
+
+	p.depth++
+}
+
+func (p *printer) End(n Node) {
+	p.depth--
+}
+
+func Print(node Node) string {
+	var p printer
+	Walk(node, &p)
+	return strings.Join(p.lines, "\n")
+}
 
 func PrintSource(node Node) string {
 	switch n := node.(type) {

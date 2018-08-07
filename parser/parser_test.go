@@ -49,5 +49,6 @@ func parseTestFile(t *testing.T, name string) {
 		t.Error(err)
 	}
 
+	t.Logf("AST:\n%s\n", ast.Print(f))
 	t.Logf("Reconstructed source from AST:\n%s\n", ast.PrintSource(f))
 }
