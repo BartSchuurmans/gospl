@@ -32,6 +32,15 @@ type LiteralExpression struct {
 func (e *LiteralExpression) Pos() token.Pos { return e.ValuePos }
 func (e *LiteralExpression) End() token.Pos { return token.Pos(int(e.ValuePos) + len(e.Value)) }
 
+type UnaryExpression struct {
+	OperatorPos token.Pos
+	Operator    token.Token
+	Expression  Expression
+}
+
+func (e *UnaryExpression) Pos() token.Pos { return e.OperatorPos }
+func (e *UnaryExpression) End() token.Pos { return e.Expression.End() }
+
 type BinaryExpression struct {
 	Left     Expression
 	Operator token.Token

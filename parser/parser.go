@@ -192,6 +192,14 @@ func (p *Parser) parseExpression() ast.Expression {
 				Expression: expr,
 			}
 		}
+	case token.MINUS, token.NOT:
+		op := p.tok
+		p.next()
+		expr := p.parseExpression()
+		lhs = &ast.UnaryExpression{
+			Operator:   op,
+			Expression: expr,
+		}
 	default:
 		p.errorExpected(p.pos, "expression")
 		p.next()
