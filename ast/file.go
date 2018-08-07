@@ -6,7 +6,7 @@ import (
 
 type File struct {
 	Declarations []Declaration
-	Comments     []Comment
+	Comments     []*Comment
 }
 
 func (f *File) Pos() token.Pos {
