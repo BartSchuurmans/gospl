@@ -58,6 +58,8 @@ func (s *Scanner) Scan() (pos token.Pos, tok token.Token, lit string) {
 			tok = token.PLUS
 		case '-':
 			tok = token.MINUS
+			// Could also be a negative token.INTEGER according to the grammar, but we scan
+			// those as token.MINUS + token.INTEGER.
 		case '*':
 			tok = token.MULTIPLY
 		case '/':
