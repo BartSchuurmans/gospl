@@ -195,10 +195,11 @@ func (p *Parser) parseExpression() ast.Expression {
 	case token.MINUS, token.NOT:
 		op := p.tok
 		p.next()
-		expr := p.parseExpression()
+		operand := p.parseExpression()
+
 		lhs = &ast.UnaryExpression{
-			Operator:   op,
-			Expression: expr,
+			Operator: op,
+			Operand:  operand,
 		}
 	default:
 		p.errorExpected(p.pos, "expression")
@@ -213,6 +214,7 @@ func (p *Parser) parseExpression() ast.Expression {
 		op := p.tok
 		p.next()
 		rhs := p.parseExpression()
+
 		return &ast.BinaryExpression{
 			Left:     lhs,
 			Operator: op,

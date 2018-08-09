@@ -35,11 +35,11 @@ func (e *LiteralExpression) End() token.Pos { return token.Pos(int(e.ValuePos) +
 type UnaryExpression struct {
 	OperatorPos token.Pos
 	Operator    token.Token
-	Expression  Expression
+	Operand     Expression
 }
 
 func (e *UnaryExpression) Pos() token.Pos { return e.OperatorPos }
-func (e *UnaryExpression) End() token.Pos { return e.Expression.End() }
+func (e *UnaryExpression) End() token.Pos { return e.Operand.End() }
 
 type BinaryExpression struct {
 	Left     Expression

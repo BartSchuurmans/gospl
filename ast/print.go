@@ -91,7 +91,7 @@ func PrintSource(node Node) string {
 	case *LiteralExpression:
 		return n.Value
 	case *UnaryExpression:
-		return n.Operator.Print() + PrintSource(n.Expression)
+		return n.Operator.Print() + PrintSource(n.Operand)
 	case *BinaryExpression:
 		return PrintSource(n.Left) + " " + n.Operator.Print() + " " + PrintSource(n.Right)
 	case *FunctionCallExpression:

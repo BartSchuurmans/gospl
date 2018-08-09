@@ -37,7 +37,7 @@ func Walk(n Node, v Visitor) {
 		Walk(nv.Type, v)
 		Walk(nv.Name, v)
 	case *UnaryExpression:
-		Walk(nv.Expression, v)
+		Walk(nv.Operand, v)
 	case *BinaryExpression:
 		Walk(nv.Left, v)
 		Walk(nv.Right, v)
