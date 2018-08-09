@@ -2,6 +2,7 @@ package ast
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 )
 
@@ -11,6 +12,15 @@ type printer struct {
 }
 
 func (p *printer) Visit(n Node) {
+	if n == nil {
+		// Skip nil nodes
+		return
+	}
+
+	// Use reflection to get the type name without "*ast." prefix that %T adds
+	t := reflect.ValueOf(n).Elem().Type()
+	nodeType := t.Name()
+
 	var info string
 	switch nv := n.(type) {
 	case *Identifier:
@@ -27,7 +37,7 @@ func (p *printer) Visit(n Node) {
 		info = ": " + info
 	}
 
-	line := fmt.Sprintf("%s%T%s", strings.Repeat("   ", p.depth), n, info)
+	line := fmt.Sprintf("%s%s%s", strings.Repeat("\t", p.depth), nodeType, info)
 	p.lines = append(p.lines, line)
 
 	p.depth++
