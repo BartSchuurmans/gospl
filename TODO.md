@@ -9,7 +9,6 @@
 * Define separate tokens for types Int/Bool/Void?
 
 ## Parser/AST
-* Store token.Pos for all AST nodes
 * Try to group parse errors together
   * Consume tokens until what is probably the end of the expected AST node?
     This increases the chance that the rest of the file will parse correctly.

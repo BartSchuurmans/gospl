@@ -55,6 +55,7 @@ func (p *Parser) next() {
 }
 
 func (p *Parser) parseComment() *ast.Comment {
+	pos := p.pos
 	var text string
 	if p.tok == token.COMMENT {
 		text = p.lit
@@ -65,7 +66,8 @@ func (p *Parser) parseComment() *ast.Comment {
 	p.nextToken()
 
 	return &ast.Comment{
-		Text: text,
+		TextPos: pos,
+		Text:    text,
 	}
 }
 
@@ -92,6 +94,7 @@ func (p *Parser) expect(tok token.Token) token.Pos {
 }
 
 func (p *Parser) parseDeclaration() ast.Declaration {
+	pos := p.pos
 	t := p.parseType()
 	name := p.parseIdentifier()
 
@@ -103,14 +106,20 @@ func (p *Parser) parseDeclaration() ast.Declaration {
 	default:
 		p.errorExpected(p.pos, "declaration")
 		p.next()
-		return &ast.BadDeclaration{}
+		return &ast.BadDeclaration{
+			From: pos,
+			To:   p.pos,
+		}
 	}
 }
 
 func (p *Parser) parseType() ast.Type {
+	pos := p.pos
+
 	switch p.tok {
 	case token.IDENTIFIER:
 		name := p.parseIdentifier()
+
 		return &ast.NamedType{
 			Name: name,
 		}
@@ -119,27 +128,39 @@ func (p *Parser) parseType() ast.Type {
 		left := p.parseType()
 		p.expect(token.COMMA)
 		right := p.parseType()
-		p.expect(token.ROUND_BRACKET_CLOSE)
+		end := p.expect(token.ROUND_BRACKET_CLOSE)
+
 		return &ast.TupleType{
-			Left:  left,
-			Right: right,
+			RoundBracketOpen:  pos,
+			Left:              left,
+			Right:             right,
+			RoundBracketClose: end,
 		}
 	case token.SQUARE_BRACKET_OPEN:
 		p.next()
 		el := p.parseType()
-		p.expect(token.SQUARE_BRACKET_CLOSE)
+		end := p.expect(token.SQUARE_BRACKET_CLOSE)
+
 		return &ast.ListType{
-			ElementType: el,
+			SquareBracketOpen:  pos,
+			ElementType:        el,
+			SquareBracketClose: end,
 		}
 	default:
 		p.errorExpected(p.pos, "type")
 		p.next()
-		return &ast.BadType{}
+
+		return &ast.BadType{
+			From: pos,
+			To:   p.pos,
+		}
 	}
 }
 
 func (p *Parser) parseIdentifier() *ast.Identifier {
-	name := "-"
+	pos := p.pos
+
+	var name string
 	if p.tok == token.IDENTIFIER {
 		name = p.lit
 		p.next()
@@ -148,19 +169,21 @@ func (p *Parser) parseIdentifier() *ast.Identifier {
 	}
 
 	return &ast.Identifier{
-		Name: name,
+		NamePos: pos,
+		Name:    name,
 	}
 }
 
 func (p *Parser) continueVariableDeclaration(t ast.Type, name *ast.Identifier) *ast.VariableDeclaration {
 	p.expect(token.IS)
 	initializer := p.parseExpression()
-	p.expect(token.SEMICOLON)
+	end := p.expect(token.SEMICOLON)
 
 	return &ast.VariableDeclaration{
 		Type:        t,
 		Name:        name,
 		Initializer: initializer,
+		Semicolon:   end,
 	}
 }
 
@@ -216,6 +239,8 @@ precedenceGroup:
 }
 
 func (p *Parser) parseUnaryExpression() ast.Expression {
+	pos := p.pos
+
 	switch p.tok {
 	case token.INTEGER, token.EMPTY_LIST:
 		return p.parseLiteralExpression()
@@ -239,18 +264,23 @@ func (p *Parser) parseUnaryExpression() ast.Expression {
 			// Tuple expression
 			p.next()
 			second := p.parseExpression()
-			p.expect(token.ROUND_BRACKET_CLOSE)
+			end := p.expect(token.ROUND_BRACKET_CLOSE)
 
 			return &ast.TupleExpression{
-				Left:  expr,
-				Right: second,
+				RoundBracketOpen:  pos,
+				Left:              expr,
+				Right:             second,
+				RoundBracketClose: end,
 			}
 		}
 
 		// Parenthesized expression
-		p.expect(token.ROUND_BRACKET_CLOSE)
+		end := p.expect(token.ROUND_BRACKET_CLOSE)
+
 		return &ast.ParenthesizedExpression{
-			Expression: expr,
+			RoundBracketOpen:  pos,
+			Expression:        expr,
+			RoundBracketClose: end,
 		}
 
 	case token.MINUS, token.NOT:
@@ -265,32 +295,43 @@ func (p *Parser) parseUnaryExpression() ast.Expression {
 		operand := p.parseExpressionWithMinPrecedence(minPrec)
 
 		return &ast.UnaryExpression{
-			Operator: op,
-			Operand:  operand,
+			OperatorPos: pos,
+			Operator:    op,
+			Operand:     operand,
 		}
 
 	default:
 		p.errorExpected(p.pos, "unary expression")
 		p.next()
-		return &ast.BadExpression{}
+
+		return &ast.BadExpression{
+			From: pos,
+			To:   p.pos,
+		}
 	}
 }
 
 func (p *Parser) parseLiteralExpression() *ast.LiteralExpression {
+	pos := p.pos
+
 	switch p.tok {
 	case token.INTEGER, token.EMPTY_LIST:
 		kind, value := p.tok, p.lit
 		p.next()
+
 		return &ast.LiteralExpression{
-			Kind:  kind,
-			Value: value,
+			ValuePos: pos,
+			Kind:     kind,
+			Value:    value,
 		}
 	default:
 		p.errorExpected(p.pos, "literal expression")
 		p.next()
+
 		return &ast.LiteralExpression{
-			Kind:  token.INVALID,
-			Value: "[BAD LITERAL EXPRESSION]",
+			ValuePos: pos,
+			Kind:     token.INVALID,
+			Value:    "",
 		}
 	}
 }
@@ -318,31 +359,33 @@ func (p *Parser) continueFunctionCallExpression(name *ast.Identifier) *ast.Funct
 		}
 	}
 
-	p.expect(token.ROUND_BRACKET_CLOSE)
+	end := p.expect(token.ROUND_BRACKET_CLOSE)
 
 	return &ast.FunctionCallExpression{
-		Name:      name,
-		Arguments: args,
+		Name:              name,
+		Arguments:         args,
+		RoundBracketClose: end,
 	}
 }
 
 func (p *Parser) continueFunctionDeclaration(returnType ast.Type, name *ast.Identifier) *ast.FunctionDeclaration {
-	p.expect(token.ROUND_BRACKET_OPEN)
 	params := p.parseFunctionParameters()
-	p.expect(token.ROUND_BRACKET_CLOSE)
 
-	varDecls, stmts := p.parseFunctionBody()
+	varDecls, stmts, end := p.parseFunctionBody()
 
 	return &ast.FunctionDeclaration{
-		ReturnType: returnType,
-		Name:       name,
-		Parameters: params,
-		Variables:  varDecls,
-		Statements: stmts,
+		ReturnType:        returnType,
+		Name:              name,
+		Parameters:        params,
+		Variables:         varDecls,
+		Statements:        stmts,
+		CurlyBracketClose: end,
 	}
 }
 
 func (p *Parser) parseFunctionParameters() *ast.FunctionParameters {
+	pos := p.expect(token.ROUND_BRACKET_OPEN)
+
 	var params []*ast.FunctionParameter
 
 	if p.tok != token.ROUND_BRACKET_CLOSE {
@@ -363,8 +406,12 @@ func (p *Parser) parseFunctionParameters() *ast.FunctionParameters {
 		}
 	}
 
+	end := p.expect(token.ROUND_BRACKET_CLOSE)
+
 	return &ast.FunctionParameters{
-		Parameters: params,
+		RoundBracketOpen:  pos,
+		Parameters:        params,
+		RoundBracketClose: end,
 	}
 }
 
@@ -378,7 +425,7 @@ func (p *Parser) parseFunctionParameter() *ast.FunctionParameter {
 	}
 }
 
-func (p *Parser) parseFunctionBody() ([]*ast.VariableDeclaration, []ast.Statement) {
+func (p *Parser) parseFunctionBody() ([]*ast.VariableDeclaration, []ast.Statement, token.Pos) {
 	p.expect(token.CURLY_BRACKET_OPEN)
 
 	var varDecls []*ast.VariableDeclaration
@@ -395,9 +442,9 @@ func (p *Parser) parseFunctionBody() ([]*ast.VariableDeclaration, []ast.Statemen
 		}
 	}
 
-	p.expect(token.CURLY_BRACKET_CLOSE)
+	end := p.expect(token.CURLY_BRACKET_CLOSE)
 
-	return varDecls, stmts
+	return varDecls, stmts, end
 }
 
 func (p *Parser) parseVariableDeclarationOrStatement(allowVariableDeclaration bool) (*ast.VariableDeclaration, ast.Statement) {
@@ -459,7 +506,7 @@ func (p *Parser) parseStatement() ast.Statement {
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
-	p.expect(token.RETURN)
+	pos := p.expect(token.RETURN)
 
 	var expr ast.Expression
 	if p.tok == token.SEMICOLON {
@@ -468,15 +515,17 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 		expr = p.parseExpression()
 	}
 
-	p.expect(token.SEMICOLON)
+	end := p.expect(token.SEMICOLON)
 
 	return &ast.ReturnStatement{
-		Value: expr,
+		Return:    pos,
+		Value:     expr,
+		Semicolon: end,
 	}
 }
 
 func (p *Parser) parseIfStatement() *ast.IfStatement {
-	p.expect(token.IF)
+	pos := p.expect(token.IF)
 	p.expect(token.ROUND_BRACKET_OPEN)
 
 	cond := p.parseExpression()
@@ -492,6 +541,7 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	}
 
 	return &ast.IfStatement{
+		If:        pos,
 		Condition: cond,
 		Body:      body,
 		Else:      elseStmt,
@@ -499,7 +549,7 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 }
 
 func (p *Parser) parseWhileStatement() *ast.WhileStatement {
-	p.expect(token.WHILE)
+	pos := p.expect(token.WHILE)
 	p.expect(token.ROUND_BRACKET_OPEN)
 
 	cond := p.parseExpression()
@@ -509,43 +559,48 @@ func (p *Parser) parseWhileStatement() *ast.WhileStatement {
 	body := p.parseStatement()
 
 	return &ast.WhileStatement{
+		While:     pos,
 		Condition: cond,
 		Body:      body,
 	}
 }
 
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
-	p.expect(token.CURLY_BRACKET_OPEN)
+	pos := p.expect(token.CURLY_BRACKET_OPEN)
 
 	var stmts []ast.Statement
 	for p.tok != token.CURLY_BRACKET_CLOSE && p.tok != token.EOF {
 		stmts = append(stmts, p.parseStatement())
 	}
 
-	p.expect(token.CURLY_BRACKET_CLOSE)
+	end := p.expect(token.CURLY_BRACKET_CLOSE)
 
 	return &ast.BlockStatement{
-		List: stmts,
+		CurlyBracketOpen:  pos,
+		List:              stmts,
+		CurlyBracketClose: end,
 	}
 }
 
 func (p *Parser) continueAssignmentStatement(name *ast.Identifier) *ast.AssignmentStatement {
 	p.expect(token.IS)
 	value := p.parseExpression()
-	p.expect(token.SEMICOLON)
+	end := p.expect(token.SEMICOLON)
 
 	return &ast.AssignmentStatement{
-		Name:  name,
-		Value: value,
+		Name:      name,
+		Value:     value,
+		Semicolon: end,
 	}
 }
 
 func (p *Parser) continueFunctionCallStatement(name *ast.Identifier) *ast.FunctionCallStatement {
 	call := p.continueFunctionCallExpression(name)
 
-	p.expect(token.SEMICOLON)
+	end := p.expect(token.SEMICOLON)
 
 	return &ast.FunctionCallStatement{
 		FunctionCall: call,
+		Semicolon:    end,
 	}
 }
