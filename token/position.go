@@ -26,6 +26,10 @@ func (f *FileInfo) Pos(offset int) Pos {
 }
 
 func (f *FileInfo) Position(pos Pos) Position {
+	if pos == NoPos {
+		return Position{}
+	}
+
 	offset := int(pos) - posBase
 
 	lineIndex, lineOffset := 0, 0
@@ -49,5 +53,8 @@ type Position struct {
 }
 
 func (pos Position) String() string {
+	if pos.Line == 0 {
+		return "invalid position"
+	}
 	return fmt.Sprintf("%s:%d:%d", pos.Filename, pos.Line, pos.Column)
 }
