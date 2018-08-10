@@ -5,6 +5,22 @@ type Visitor interface {
 	End(n Node)
 }
 
+type VisitorFunc func(Node)
+
+func (f VisitorFunc) Visit(n Node) {
+	if n != nil {
+		f(n)
+	}
+}
+
+func (f VisitorFunc) End(n Node) {
+	// Ignore
+}
+
+func WalkFunc(n Node, v VisitorFunc) {
+	Walk(n, v)
+}
+
 func Walk(n Node, v Visitor) {
 	// Visit node itself
 	v.Visit(n)
