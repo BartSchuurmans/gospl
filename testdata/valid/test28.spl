@@ -1,0 +1,18 @@
+Int main() {
+	// (1 + (2 * (- 3))) - (4 / ((-5) + 6))
+	// binary minus
+	//   plus
+	//     1
+	//     multiply
+	//       2
+	//       unary minus
+	//         3
+	//   divide
+	//     4
+	//     parenthesized
+	//       plus
+	//         unary minus
+	//           5
+	//         6
+	return 1 + 2 * -3 - 4 / (-5 + 6);
+}

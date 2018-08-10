@@ -1,0 +1,6 @@
+Int main() {
+	if(!!True == !!True) {
+		return 0;
+	}
+	return --1;
+}
