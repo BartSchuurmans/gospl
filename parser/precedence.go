@@ -4,41 +4,50 @@ import (
 	"github.com/Minnozz/gospl/token"
 )
 
+type Precedence int
+
 // Precedence groups, from lowest to highest
 const (
-	binaryBoolean        = iota // &&, ||
-	binaryComparison            // ==, !=, <, >, <=, >=
-	unaryNot                    // !
-	binaryColon                 // :
-	binaryAddition              // +, -
-	binaryMultiplication        // *, /, %
-	unaryMinus                  // -
-	highestPrecedence           // default
+	binaryBoolean        Precedence = iota // &&, ||
+	binaryComparison                       // ==, !=, <, >, <=, >=
+	unaryNot                               // !
+	binaryColon                            // :
+	binaryAddition                         // +, -
+	binaryMultiplication                   // *, /, %
+	unaryMinus                             // -
+	highestPrecedence                      // default
 )
 
-func unaryOperatorPrecedence(op token.Token) int {
+type Associativity int
+
+const (
+	LeftAssociative Associativity = iota
+	RightAssociative
+)
+
+func unaryPrecAssoc(op token.Token) (Precedence, Associativity) {
 	switch op {
 	case token.NOT:
-		return unaryNot
+		return unaryNot, RightAssociative
 	case token.MINUS:
-		return unaryMinus
+		return unaryMinus, RightAssociative
 	default:
 		panic("invalid unary operator: " + op.String())
 	}
 }
 
-func binaryOperatorPrecedence(op token.Token) int {
+func binaryPrecAssoc(op token.Token) (Precedence, Associativity) {
 	switch op {
 	case token.PLUS, token.MINUS:
-		return binaryAddition
+		return binaryAddition, LeftAssociative
 	case token.MULTIPLY, token.DIVIDE, token.MODULO:
-		return binaryMultiplication
+		return binaryMultiplication, LeftAssociative
 	case token.EQUALS, token.LESS_THAN, token.GREATER_THAN, token.LESS_THAN_EQUALS, token.GREATER_THAN_EQUALS, token.NOT_EQUALS:
-		return binaryComparison
+		return binaryComparison, LeftAssociative
 	case token.AND, token.OR:
-		return binaryBoolean
+		return binaryBoolean, LeftAssociative
 	case token.COLON:
-		return binaryColon
+		return binaryColon, LeftAssociative
 	default:
 		panic("invalid binary operator: " + op.String())
 	}
