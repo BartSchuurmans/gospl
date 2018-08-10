@@ -157,21 +157,72 @@ func (p *Parser) continueVariableDeclaration(t ast.Type, name *ast.Identifier) *
 }
 
 func (p *Parser) parseExpression() ast.Expression {
-	var lhs ast.Expression
+	return p.parseExpressionWithMinPrecedence(0)
+}
 
+func (p *Parser) parseExpressionWithMinPrecedence(minPrec Precedence) ast.Expression {
+	// Parse initial leg of expression
+	expr := p.parseUnaryExpression()
+
+	// If the next token is a binary operator, expr will become the lhs of that binary expression unless its operator precedence is
+	// lower than the current minPrec.
+precedenceGroup:
+	for p.tok != token.EOF {
+		switch p.tok {
+		case token.PLUS, token.MINUS, token.MULTIPLY, token.DIVIDE, token.MODULO,
+			token.EQUALS, token.LESS_THAN, token.GREATER_THAN, token.LESS_THAN_EQUALS, token.GREATER_THAN_EQUALS, token.NOT_EQUALS,
+			token.AND, token.OR, token.COLON:
+			// Next token is a binary operator
+			prec, assoc := binaryPrecAssoc(p.tok)
+			if prec < minPrec {
+				// Operator precedence is too low for this precedence group.  This expr will become the lhs of the next binary
+				// expression in an enclosing call to parseExpressionWithMinPrecedence().
+				break precedenceGroup
+			}
+
+			op := p.tok
+			p.next()
+
+			newMinPrec := prec
+			if assoc == LeftAssociative {
+				// Even if the next binary expression has the same precedence as the current one, it should not be parsed into the
+				// rhs of this expression because of left associativity.
+				// Instead, this expr will become the lhs of the next binary expression in the next iteration of the precedenceGroup
+				// loop (or in an enclosing call to parseExpressionWithMinPrecedence()).
+				newMinPrec += 1
+			}
+			rhs := p.parseExpressionWithMinPrecedence(newMinPrec)
+
+			expr = &ast.BinaryExpression{
+				Left:     expr,
+				Operator: op,
+				Right:    rhs,
+			}
+		default:
+			// expr is not part of a binary expression
+			break precedenceGroup
+		}
+	}
+
+	return expr
+}
+
+func (p *Parser) parseUnaryExpression() ast.Expression {
 	switch p.tok {
 	case token.INTEGER, token.EMPTY_LIST:
-		lhs = p.parseLiteralExpression()
+		return p.parseLiteralExpression()
+
 	case token.IDENTIFIER:
 		ident := p.parseIdentifier()
-		switch p.tok {
-		case token.ROUND_BRACKET_OPEN:
+
+		if p.tok == token.ROUND_BRACKET_OPEN {
 			// Function call
-			lhs = p.continueFunctionCallExpression(ident)
-		default:
-			// Identifier
-			lhs = ident
+			return p.continueFunctionCallExpression(ident)
 		}
+
+		// Identifier
+		return ident
+
 	case token.ROUND_BRACKET_OPEN:
 		p.next()
 		expr := p.parseExpression()
@@ -181,48 +232,39 @@ func (p *Parser) parseExpression() ast.Expression {
 			p.next()
 			second := p.parseExpression()
 			p.expect(token.ROUND_BRACKET_CLOSE)
-			lhs = &ast.TupleExpression{
+
+			return &ast.TupleExpression{
 				Left:  expr,
 				Right: second,
 			}
-		} else {
-			// Parenthesized expression
-			p.expect(token.ROUND_BRACKET_CLOSE)
-			lhs = &ast.ParenthesizedExpression{
-				Expression: expr,
-			}
 		}
+
+		// Parenthesized expression
+		p.expect(token.ROUND_BRACKET_CLOSE)
+		return &ast.ParenthesizedExpression{
+			Expression: expr,
+		}
+
 	case token.MINUS, token.NOT:
+		minPrec, assoc := unaryPrecAssoc(p.tok)
+		if assoc == LeftAssociative {
+			minPrec += 1
+		}
+
 		op := p.tok
 		p.next()
-		operand := p.parseExpression()
 
-		lhs = &ast.UnaryExpression{
+		operand := p.parseExpressionWithMinPrecedence(minPrec)
+
+		return &ast.UnaryExpression{
 			Operator: op,
 			Operand:  operand,
 		}
-	default:
-		p.errorExpected(p.pos, "expression")
-		p.next()
-		lhs = &ast.BadExpression{}
-	}
 
-	switch p.tok {
-	case token.PLUS, token.MINUS, token.MULTIPLY, token.DIVIDE, token.MODULO,
-		token.EQUALS, token.LESS_THAN, token.GREATER_THAN, token.LESS_THAN_EQUALS, token.GREATER_THAN_EQUALS, token.NOT_EQUALS,
-		token.AND, token.OR, token.COLON:
-		op := p.tok
-		p.next()
-		rhs := p.parseExpression()
-
-		return &ast.BinaryExpression{
-			Left:     lhs,
-			Operator: op,
-			Right:    rhs,
-		}
 	default:
-		// Expression ends here
-		return lhs
+		p.errorExpected(p.pos, "unary expression")
+		p.next()
+		return &ast.BadExpression{}
 	}
 }
 
