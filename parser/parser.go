@@ -7,11 +7,12 @@ import (
 )
 
 type Parser struct {
-	Errors   scanner.ErrorList
-	Comments []*ast.Comment
+	Errors scanner.ErrorList
 
 	fileInfo *token.FileInfo
 	scanner  scanner.Scanner
+
+	comments []*ast.Comment
 
 	// Current scanner token
 	pos token.Pos
@@ -35,15 +36,21 @@ func (p *Parser) Parse() *ast.File {
 
 	return &ast.File{
 		Declarations: declarations,
+		Comments:     p.comments,
 	}
 }
 
-func (p *Parser) next() {
+func (p *Parser) nextToken() {
+	// Advance scanner to next token
 	p.pos, p.tok, p.lit = p.scanner.Scan()
+}
 
-	// Automatically parse comments
+func (p *Parser) next() {
+	p.nextToken()
+
+	// Automatically parse comments outside of the normal AST
 	for p.tok == token.COMMENT {
-		p.Comments = append(p.Comments, p.parseComment())
+		p.comments = append(p.comments, p.parseComment())
 	}
 }
 
@@ -54,7 +61,8 @@ func (p *Parser) parseComment() *ast.Comment {
 	} else {
 		p.errorExpected(p.pos, "comment")
 	}
-	p.next()
+	// Don't call p.next() because we are already in the for loop inside next().
+	p.nextToken()
 
 	return &ast.Comment{
 		Text: text,

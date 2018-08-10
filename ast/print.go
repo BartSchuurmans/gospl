@@ -26,6 +26,8 @@ func (p *printer) Visit(n Node) {
 
 	var info string
 	switch nv := n.(type) {
+	case *Comment:
+		info = fmt.Sprintf("%+q", nv.Text)
 	case *Identifier:
 		info = nv.Name
 	case *LiteralExpression:

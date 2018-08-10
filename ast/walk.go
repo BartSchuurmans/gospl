@@ -31,6 +31,9 @@ func Walk(n Node, v Visitor) {
 		for _, ce := range nv.Declarations {
 			Walk(ce, v)
 		}
+		for _, ce := range nv.Comments {
+			Walk(ce, v)
+		}
 	case *VariableDeclaration:
 		Walk(nv.Type, v)
 		Walk(nv.Name, v)
