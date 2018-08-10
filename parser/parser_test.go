@@ -36,19 +36,18 @@ func parseTestFile(t *testing.T, name string) {
 		t.Fatalf("Error reading test %s: %v", name, err)
 	}
 
-	info := &token.FileInfo{
+	fileInfo := &token.FileInfo{
 		Filename: name,
 	}
 
 	p := &Parser{}
-	p.Init(info, src)
+	p.Init(fileInfo, src)
 
-	f := p.Parse()
-
+	fileNode := p.Parse()
 	for _, err := range p.Errors {
 		t.Error(err)
 	}
 
-	t.Logf("AST:\n%s\n", ast.Print(f))
-	t.Logf("Reconstructed source from AST:\n%s\n", ast.PrintSource(f))
+	t.Logf("AST:\n%s\n", ast.Print(fileNode, fileInfo))
+	t.Logf("Reconstructed source from AST:\n%s\n", ast.PrintSource(fileNode))
 }

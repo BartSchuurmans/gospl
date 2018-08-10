@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/Minnozz/gospl/token"
 )
 
 type printer struct {
-	lines []string
-	depth int
+	fileInfo *token.FileInfo
+	lines    []string
+	depth    int
 }
 
 func (p *printer) Visit(n Node) {
@@ -37,7 +40,7 @@ func (p *printer) Visit(n Node) {
 		info = ": " + info
 	}
 
-	line := fmt.Sprintf("%s%s%s", strings.Repeat("\t", p.depth), nodeType, info)
+	line := fmt.Sprintf("%-20s %s%s%s", p.fileInfo.Position(n.Pos()), strings.Repeat("   ", p.depth), nodeType, info)
 	p.lines = append(p.lines, line)
 
 	p.depth++
@@ -47,8 +50,10 @@ func (p *printer) End(n Node) {
 	p.depth--
 }
 
-func Print(node Node) string {
-	var p printer
+func Print(node Node, fileInfo *token.FileInfo) string {
+	p := printer{
+		fileInfo: fileInfo,
+	}
 	Walk(node, &p)
 	return strings.Join(p.lines, "\n")
 }
